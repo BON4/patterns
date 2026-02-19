@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  test-srv:
+    build:
+      context: ../..           # корень репозитория
+      dockerfile: Dockerfile.server   # путь относительно context
+    container_name: test-srv
+    ports:
+      - "8080:8080"
+    networks:
+      - monitoring
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "9999:6379"
+    restart: unless-stopped
+    networks:
+      - monitoring    
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - monitoring    
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge

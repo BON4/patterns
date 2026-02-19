@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'test-srv'
+    static_configs:
+      - targets: ['test-srv:8080']

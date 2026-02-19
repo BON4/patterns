@@ -1,0 +1,5 @@
+service-name: "test-srv"
+port: "8080"
+redis-url: redis://redis:6379/0
+rate-limiter:
+  rpm: 50
