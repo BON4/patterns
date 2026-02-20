@@ -39,6 +39,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./dashboard.json:/var/lib/grafana/dashboards/dashboard.json
     depends_on:
       - prometheus
     restart: unless-stopped

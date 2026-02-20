@@ -1,5 +1,5 @@
 target-host: "http://localhost:8080/ping"
 stats-interval: 10s
 clients-num: 5
-clients-minute-rate-range: [100, 200]
+clients-minute-rate-range: [100]
 clients-msg-size-range: [100, 200]

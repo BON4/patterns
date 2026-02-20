@@ -49,7 +49,7 @@ func LoggingMiddleware(lg *logrus.Logger) gin.HandlerFunc {
 func RateLimitMiddleware(lg *logrus.Logger, rdb *redis.Client, rpm int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
-		l, err := ratelimit.GetFixedWindowLimiter(ip, &ratelimit.RateLimiterParams{
+		l, err := ratelimit.GetTokenBucketLimiter(ip, &ratelimit.RateLimiterParams{
 			Ctx:     c.Request.Context(),
 			RClient: rdb,
 			Rpm:     int64(rpm),
