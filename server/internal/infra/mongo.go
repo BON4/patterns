@@ -1,4 +1,4 @@
-package mongoclient
+package infra
 
 import (
 	"context"
@@ -13,7 +13,7 @@ type Client struct {
 	DB     *mongo.Database
 }
 
-func New(ctx context.Context, uri string, dbName string) (*Client, error) {
+func NewMongo(ctx context.Context, uri string, dbName string) (*Client, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 

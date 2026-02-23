@@ -1,4 +1,4 @@
-package mongoclient
+package repo
 
 import (
 	"context"
@@ -14,17 +14,17 @@ type Product struct {
 	Price float64        `bson:"price" json:"price"`
 }
 
-type ProductRepo struct {
+type ProductMongoRepo struct {
 	coll *mongo.Collection
 }
 
-func NewProductRepo(db *mongo.Database, collName string) *ProductRepo {
-	return &ProductRepo{coll: db.Collection(collName)}
+func NewProductMongoRepo(db *mongo.Database, collName string) *ProductMongoRepo {
+	return &ProductMongoRepo{coll: db.Collection(collName)}
 }
 
-func (r *ProductRepo) GetProduct(ctx context.Context, name string) (*Product, error) {
+func (r *ProductMongoRepo) GetProduct(ctx context.Context, name string) (*Product, error) {
 	var p Product
-	err := r.coll.FindOne(ctx, bson.E{"name", name}).Decode(&p)
+	err := r.coll.FindOne(ctx, bson.M{"name": name}).Decode(&p)
 	if err != nil && errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, nil
 	}

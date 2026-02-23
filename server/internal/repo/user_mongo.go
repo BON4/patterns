@@ -1,4 +1,4 @@
-package mongoclient
+package repo
 
 import (
 	"context"
@@ -19,15 +19,15 @@ type UserRequestUpdate struct {
 	RequestCount int64  `json:"requestCount"`
 }
 
-type UserRepo struct {
+type UserMongoRepo struct {
 	coll *mongo.Collection
 }
 
-func NewUserRepo(db *mongo.Database, collName string) *UserRepo {
-	return &UserRepo{coll: db.Collection(collName)}
+func NewUserMongoRepo(db *mongo.Database, collName string) *UserMongoRepo {
+	return &UserMongoRepo{coll: db.Collection(collName)}
 }
 
-func (r *UserRepo) DumpRequestCounts(ctx context.Context, updates []UserRequestUpdate) error {
+func (r *UserMongoRepo) DumpRequestCounts(ctx context.Context, updates []UserRequestUpdate) error {
 	if len(updates) == 0 {
 		return nil
 	}

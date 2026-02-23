@@ -3,17 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/BON4/patterns/server/internal/config"
-	"github.com/BON4/patterns/server/internal/infra/mongoclient"
-	"github.com/BON4/patterns/server/internal/infra/redisclient"
+	"github.com/BON4/patterns/server/internal/exchange"
+	"github.com/BON4/patterns/server/internal/geo"
+	"github.com/BON4/patterns/server/internal/handlers"
+	"github.com/BON4/patterns/server/internal/infra"
 	"github.com/BON4/patterns/server/internal/logger"
+	"github.com/BON4/patterns/server/internal/repo"
+	"github.com/BON4/patterns/server/internal/server"
+	"github.com/BON4/patterns/server/internal/service"
 	"github.com/BON4/patterns/server/internal/telemetry"
-	transport "github.com/BON4/patterns/server/internal/transport/http"
 	yaml "github.com/goccy/go-yaml"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
@@ -54,21 +59,21 @@ func main() {
 
 	lg := logger.New()
 
-	rdb, err := redisclient.New(ctx, cfg.RedisURL)
+	rdb, err := infra.NewRedis(ctx, cfg.RedisURL)
 	if err != nil {
 		lg.WithError(err).Error("redis connect failed")
 		os.Exit(1)
 	}
 
 	// MongoDB
-	mc, err := mongoclient.New(ctx, cfg.MongoURI, cfg.MongoDB)
+	mc, err := infra.NewMongo(ctx, cfg.MongoURI, cfg.MongoDB)
 	if err != nil {
 		lg.WithError(err).Error("mongo connect failed")
 		os.Exit(1)
 	}
 	defer mc.Close(ctx)
 
-	userRepo := mongoclient.NewUserRepo(mc.DB, "users")
+	rateStempide := infra.NewRedisStampede[[]exchange.Rate](rdb, "currenct-rate", time.Minute)
 
 	pm, err := telemetry.RegisterPrometheusMetricsExporter()
 	if err != nil {
@@ -76,13 +81,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	srv := transport.NewServer(cfg, lg, rdb, userRepo, pm)
+	userRepo := repo.NewUserMongoRepo(mc.DB, "users")
+	productRepo := repo.NewProductMongoRepo(mc.DB, "products")
+	userKvRepo := repo.NewUserKvRepo(rdb)
+	exchangeClient := exchange.NewExchangeClient(infra.NewHTTPClient(&http.Client{}, cfg.ExchangeBaseURL))
 
-	go func() {
-		if err := srv.Start(ctx); err != nil {
-			lg.WithError(err).Error("server start error")
-		}
-	}()
+	// services
+	userService := service.NewUserService(userKvRepo, userRepo)
+	productService := service.NewProductService(productRepo, exchangeClient, &geo.LocalGeoResolver{}, *rateStempide)
+
+	h := handlers.NewHandler(productService, userService, lg)
+	srv := server.NewServer(cfg, h, lg, rdb, pm)
+
+	if err := srv.StartBlocking(); err != nil {
+		lg.WithError(err).Error("server start error")
+	}
 
 	<-ctx.Done()
 

@@ -1,4 +1,4 @@
-package redisclient
+package repo
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BON4/patterns/server/internal/infra"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
@@ -41,9 +42,6 @@ type UserRequestsDump struct {
 	Count int64
 }
 
-var ErrLockNotAcquired error = fmt.Errorf("lock is not acquired")
-
-// DumpUserRequests:
 // 1. Get lock
 // 2. Rename requests:current set to requests:processing so that new requests still will be writen to requests:current but old ones will be safe to process.
 // 3. Dump all requests
@@ -57,22 +55,12 @@ func (r *UserKvRepo) DumpUserRequests(ctx context.Context) ([]UserRequestsDump, 
 	err := r.rClient.SetArgs(ctx, currLockName, lockValue, redis.SetArgs{Mode: "NX", TTL: time.Minute}).Err()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return nil, ErrLockNotAcquired
+			return nil, infra.ErrLockNotAcquired
 		}
 		return nil, fmt.Errorf("failed to accquere lock: %w", err)
 	}
 
-	defer func() {
-		// Remove lock by uuid
-		lua := `
-    if redis.call("get", KEYS[1]) == ARGV[1] then
-        return redis.call("del", KEYS[1])
-    else
-        return 0
-    end
-    `
-		_, _ = r.rClient.Eval(ctx, lua, []string{currLockName}, lockValue).Result()
-	}()
+	defer infra.ReleaseLock(ctx, r.rClient, currLockName, lockValue)
 
 	err = r.rClient.Rename(ctx, r.KeyPrefix+r.CurrentKeyPrefix, r.KeyPrefix+r.ProcessingKeyPrefix).Err()
 	if err != nil {
