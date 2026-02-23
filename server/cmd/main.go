@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/BON4/patterns/server/internal/config"
+	"github.com/BON4/patterns/server/internal/infra/mongoclient"
 	"github.com/BON4/patterns/server/internal/infra/redisclient"
 	"github.com/BON4/patterns/server/internal/logger"
 	"github.com/BON4/patterns/server/internal/telemetry"
@@ -59,13 +60,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	// MongoDB
+	mc, err := mongoclient.New(ctx, cfg.MongoURI, cfg.MongoDB)
+	if err != nil {
+		lg.WithError(err).Error("mongo connect failed")
+		os.Exit(1)
+	}
+	defer mc.Close(ctx)
+
+	userRepo := mongoclient.NewUserRepo(mc.DB, "users")
+
 	pm, err := telemetry.RegisterPrometheusMetricsExporter()
 	if err != nil {
 		lg.WithError(err).Error("prometheus setup failed")
 		os.Exit(1)
 	}
 
-	srv := transport.NewServer(cfg, lg, rdb, pm)
+	srv := transport.NewServer(cfg, lg, rdb, userRepo, pm)
 
 	go func() {
 		if err := srv.Start(ctx); err != nil {

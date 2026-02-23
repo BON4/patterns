@@ -14,10 +14,13 @@ type RateLimiterConfig struct {
 }
 
 type ServerConfig struct {
-	ServiceName string            `yaml:"service-name"`
-	Port        string            `yaml:"port"`
-	RedisURL    string            `yaml:"redis-url"`
-	RateLimiter RateLimiterConfig `yaml:"rate-limiter,omitempty"`
+	ServiceName     string            `yaml:"service-name"`
+	Port            string            `yaml:"port"`
+	RedisURL        string            `yaml:"redis-url"`
+	MongoURI        string            `yaml:"mongo-uri"`
+	MongoDB         string            `yaml:"mongo-db"`
+	ExchangeBaseURL string            `yaml:"exchange-base-url"`
+	RateLimiter     RateLimiterConfig `yaml:"rate-limiter,omitempty"`
 }
 
 func (c *ServerConfig) Validate() error {
@@ -41,6 +44,14 @@ func (c *ServerConfig) Validate() error {
 
 	if _, err := redis.ParseURL(c.RedisURL); err != nil {
 		return fmt.Errorf("invalid redis_url: %w", err)
+	}
+
+	if c.MongoURI == "" {
+		return errors.New("mongo-uri is required")
+	}
+
+	if c.MongoDB == "" {
+		return errors.New("mongo-db is required")
 	}
 
 	return nil

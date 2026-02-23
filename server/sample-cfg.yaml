@@ -1,5 +1,8 @@
 service-name: "test-srv"
 port: "8080"
 redis-url: redis://redis:6379/0
+mongo-uri: mongodb://admin:admin@mongo:27017
+mongo-db: test
 rate-limiter:
   rpm: 50
+exchange-base-url: http://test.com

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	ratelimit "github.com/BON4/patterns/rate-limit"
+	"github.com/BON4/patterns/server/internal/infra/redisclient"
 	"github.com/BON4/patterns/server/internal/telemetry"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -24,6 +25,17 @@ func MetricsMiddleware(me telemetry.MetricExporter) gin.HandlerFunc {
 			Path:      c.FullPath(),
 			StartTime: start,
 		})
+	}
+}
+
+func TrackUserRequests(userKvRepo *redisclient.UserKvRepo) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		err := userKvRepo.SaveUserRequest(ctx, ctx.ClientIP())
+		if err != nil {
+			logrus.Errorf("failed to save request for %s: %s", ctx.ClientIP(), err)
+		}
+
+		ctx.Next()
 	}
 }
 

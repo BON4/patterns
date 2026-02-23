@@ -3,8 +3,8 @@ version: "3.9"
 services:
   test-srv:
     build:
-      context: ../..           # корень репозитория
-      dockerfile: Dockerfile.server   # путь относительно context
+      context: ../..
+      dockerfile: Dockerfile.server
     container_name: test-srv
     ports:
       - "8080:8080"
@@ -19,6 +19,21 @@ services:
     restart: unless-stopped
     networks:
       - monitoring    
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+      - MONGO_INITDB_DATABASE=admin
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    networks:
+      - monitoring
 
   prometheus:
     image: prom/prometheus:latest
@@ -50,3 +65,6 @@ services:
 networks:
   monitoring:
     driver: bridge
+
+volumes:
+  mongo_data:

@@ -409,9 +409,13 @@ func (cm *ClientsManager) Start(ctx context.Context) error {
 	})
 
 	for _, c := range cm.clients {
+
 		cm.wg.Go(func() {
 			c.StartForHost(ctx, cm.targetHost)
 		})
+
+		var jitterTime = (time.Second / 100) * time.Duration(rand.IntN(100)+1)
+		time.Sleep(jitterTime)
 	}
 
 	cm.wg.Wait()
