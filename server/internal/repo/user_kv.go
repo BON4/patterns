@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BON4/patterns/server/internal/domain"
 	"github.com/BON4/patterns/server/internal/infra"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -37,17 +38,12 @@ func (r *UserKvRepo) SaveUserRequest(ctx context.Context, ip string) error {
 	return res.Err()
 }
 
-type UserRequestsDump struct {
-	IP    string
-	Count int64
-}
-
 // 1. Get lock
 // 2. Rename requests:current set to requests:processing so that new requests still will be writen to requests:current but old ones will be safe to process.
 // 3. Dump all requests
 // 4. Release lock
 // No need for lock auto-renewing or fecing token implementation becouse operation is fast
-func (r *UserKvRepo) DumpUserRequests(ctx context.Context) ([]UserRequestsDump, error) {
+func (r *UserKvRepo) DumpUserRequests(ctx context.Context) ([]domain.UserRequests, error) {
 	var (
 		currLockName = r.LockPrefix + ":" + "DumpUserRequests"
 		lockValue    = uuid.New().String()
@@ -82,15 +78,15 @@ func (r *UserKvRepo) DumpUserRequests(ctx context.Context) ([]UserRequestsDump, 
 	// Hold the lock for a short while to simulate a long-running job
 	time.Sleep(time.Second * 5)
 
-	dumps := make([]UserRequestsDump, 0, len(resp.Val()))
+	dumps := make([]domain.UserRequests, 0, len(resp.Val()))
 	for ip, countStr := range resp.Val() {
 		count, err := strconv.ParseInt(countStr, 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		dumps = append(dumps, UserRequestsDump{
+		dumps = append(dumps, domain.UserRequests{
 			IP:    ip,
-			Count: count,
+			Count: int(count),
 		})
 	}
 	return dumps, nil

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BON4/patterns/server/internal/domain"
 	"github.com/BON4/patterns/server/internal/exchange"
 	"github.com/BON4/patterns/server/internal/geo"
 	"github.com/BON4/patterns/server/internal/infra"
-	"github.com/BON4/patterns/server/internal/repo"
 )
 
 type GeoResolver interface {
@@ -19,7 +19,7 @@ type GeoResolver interface {
 }
 
 type ProductRepo interface {
-	GetProduct(ctx context.Context, name string) (*repo.Product, error)
+	GetProduct(ctx context.Context, name string) (*domain.Product, error)
 }
 
 type ExchangeClient interface {

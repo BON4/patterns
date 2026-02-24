@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/BON4/patterns/server/internal/repo"
+	"github.com/BON4/patterns/server/internal/domain"
 )
 
 type UserKvRepo interface {
 	SaveUserRequest(ctx context.Context, ip string) error
-	DumpUserRequests(ctx context.Context) ([]repo.UserRequestsDump, error)
+	DumpUserRequests(ctx context.Context) ([]domain.UserRequests, error)
 }
 
 type UserMongoRepo interface {
-	DumpRequestCounts(ctx context.Context, updates []repo.UserRequestUpdate) error
+	DumpRequestCounts(ctx context.Context, updates []domain.UserRequests) error
 }
 
 type UserService struct {
@@ -38,11 +38,11 @@ func (s *UserService) SyncToMongo(ctx context.Context) error {
 		return nil
 	}
 
-	updates := make([]repo.UserRequestUpdate, 0, len(dumps))
+	updates := make([]domain.UserRequests, 0, len(dumps))
 	for _, d := range dumps {
-		updates = append(updates, repo.UserRequestUpdate{
-			IP:           d.IP,
-			RequestCount: d.Count,
+		updates = append(updates, domain.UserRequests{
+			IP:    d.IP,
+			Count: d.Count,
 		})
 	}
 

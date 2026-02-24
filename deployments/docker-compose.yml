@@ -1,11 +1,11 @@
 version: "3.9"
 
 services:
-  test-srv:
+  orders:
     build:
-      context: ../..
-      dockerfile: Dockerfile.server
-    container_name: test-srv
+      context: ../
+      dockerfile: Dockerfile.orders
+    container_name: order
     ports:
       - "8080:8080"
     networks:
